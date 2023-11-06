@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors');
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 // const jwt = require('jsonwebtoken');
 // const cookieParser = require('cookie-parser')
@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(express.json());
 app.use(cors({
-    origin:'http://localhost:5173',
+    origin: ['http://localhost:5174', 'http://localhost:5173'],
     credentials: true
 }));
 
@@ -30,15 +30,34 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect(); 
+        await client.connect();
 
-        const JobsCollections= client.db("JobBoardDB").collection("JobsPosting");
+        const JobsCollections = client.db("JobBoardDB").collection("jobsPost");
+        const AppliedCollection = client.db("JobBoardDB").collection("AppliedCollection")
 
-        app.get("/api/v1/jobsdata", async(req, res)=>{
+        app.get("/api/v1/jobsdata", async (req, res) => {
             const cursor = JobsCollections.find();
-            const result= await cursor.toArray();
+            const result = await cursor.toArray();
             res.send(result);
         })
+        // get specific Id data
+        app.get(`/api/v1/jobsdata/:id`, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await JobsCollections.findOne(query);
+            res.send(result);
+        })
+
+
+        // applied jobs related Api
+
+        app.post("/api/v1/applied", async (req, res) => {
+            const applied = req.body;
+            console.log(applied);
+            const result = await AppliedCollection.insertOne(applied);
+            res.send(result);
+        })
+
 
 
 
