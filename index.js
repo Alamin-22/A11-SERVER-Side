@@ -58,6 +58,20 @@ async function run() {
             res.send(result);
         })
 
+        app.get("/api/v1/applied", async (req, res) => {
+            const cursor = AppliedCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        // get specific Id data
+        app.get(`/api/v1/applied/:id`, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await AppliedCollection.findOne(query);
+            res.send(result);
+        })
+
 
 
 
