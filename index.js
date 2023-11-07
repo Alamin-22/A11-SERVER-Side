@@ -57,6 +57,13 @@ async function run() {
             const result = await JobsCollections.findOne(query);
             res.send(result);
         })
+        app.delete("/api/v1/jobsdata/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await JobsCollections.deleteOne(query);
+            res.send(result);
+        })
+
         // job post
 
         app.post(`/api/v1/jobsdata`, async (req, res) => {
