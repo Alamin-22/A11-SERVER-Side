@@ -36,16 +36,20 @@ async function run() {
         const AppliedCollection = client.db("JobBoardDB").collection("AppliedCollection")
         // get jobs from api
         app.get("/api/v1/jobsdata", async (req, res) => {
-
-            console.log(req.query.Category)
+            console.log(req.query.email)
             let query = {};
             if (req.query?.Category) {
                 query = { Category: req.query?.Category }
+            }
+            if (req.query?.email) {
+                query = { postedEmail: req.query?.email }
             }
             const cursor = JobsCollections.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
+
+
         // get specific Id data
         app.get(`/api/v1/jobsdata/:id`, async (req, res) => {
             const id = req.params.id;
@@ -53,11 +57,14 @@ async function run() {
             const result = await JobsCollections.findOne(query);
             res.send(result);
         })
-        // 
+        // job post
 
-
-
-
+        app.post(`/api/v1/jobsdata`, async (req, res) => {
+            const NewJob = req.body;
+            // console.log(NewJob);
+            const result = await JobsCollections.insertOne(NewJob);
+            res.send(result);
+        })
 
 
 
@@ -65,13 +72,13 @@ async function run() {
 
         app.post("/api/v1/applied", async (req, res) => {
             const applied = req.body;
-            console.log(applied);
+            // console.log(applied);
             const result = await AppliedCollection.insertOne(applied);
             res.send(result);
         })
 
         app.get("/api/v1/applied", async (req, res) => {
-            console.log(req.query.email);
+            // console.log(req.query.email);
             let query = {};
             if (req.query?.email) {
                 query = { email: req.query.email }
