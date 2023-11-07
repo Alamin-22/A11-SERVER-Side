@@ -34,9 +34,15 @@ async function run() {
 
         const JobsCollections = client.db("JobBoardDB").collection("jobsPost");
         const AppliedCollection = client.db("JobBoardDB").collection("AppliedCollection")
-
+        // get jobs from api
         app.get("/api/v1/jobsdata", async (req, res) => {
-            const cursor = JobsCollections.find();
+
+            console.log(req.query.Category)
+            let query = {};
+            if (req.query?.Category) {
+                query = { Category: req.query?.Category }
+            }
+            const cursor = JobsCollections.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -47,6 +53,12 @@ async function run() {
             const result = await JobsCollections.findOne(query);
             res.send(result);
         })
+        // 
+
+
+
+
+
 
 
         // applied jobs related Api
