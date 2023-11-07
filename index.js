@@ -64,6 +64,12 @@ async function run() {
             res.send(result);
         })
 
+        app.patch("/api/v1/jobsdata/:id", async(req, res)=>{
+            const updateJobData= req.body;
+            console.log(updateJobData);
+
+        })
+
         // job post
 
         app.post(`/api/v1/jobsdata`, async (req, res) => {
