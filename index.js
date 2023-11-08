@@ -35,8 +35,8 @@ const logger = async (req, res, next) => {
     next();
 }
 const verifyToken = async (req, res, next) => {
-    const token = req.cookies?.Token;
-    // console.log("Value of token in middleware:", token)
+    const token = req.cookies?.token;
+    console.log("Value of token in middleware:", token)
     if (!token) {
         return res.status(401).send({ message: "Unauthorized" })
     }
@@ -83,15 +83,28 @@ async function run() {
 
 
         // get jobs from api
-        app.get("/api/v1/jobsdata", async (req, res) => {
-            console.log(req.query.email)
+        app.get("/api/v1/jobsdata",  async (req, res) => {
+            // console.log(req.query.email)
             let query = {};
             if (req.query?.Category) {
                 query = { Category: req.query?.Category }
             }
+            const cursor = JobsCollections.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+        // get api for specific profile posted job 
+        app.get("/api/v1/jobsdata/myJobs", verifyToken ,async(req, res)=>{
+            console.log(req.query.email)
+            
+            if (req.query.email !== req.user.email) {
+                return res.status(403).send({ message: "Forbidden Access" })
+            }
+            let query = {};
             if (req.query?.email) {
                 query = { postedEmail: req.query?.email }
             }
+            
             const cursor = JobsCollections.find(query);
             const result = await cursor.toArray();
             res.send(result);
@@ -158,11 +171,13 @@ async function run() {
             res.send(result);
         })
 
-        app.get("/api/v1/applied", async (req, res) => {
+        app.get("/api/v1/applied", verifyToken, logger, async (req, res) => {
             console.log("applied called email:", req.query.email);
             console.log("Valid user Information :", req.user);
             // console.log("token from applied api:", req.cookies.token);
-
+            if (req.query.email !== req.user.email) {
+                return res.status(403).send({ message: "Forbidden Access" })
+            }
             let query = {};
             if (req.query?.email) {
                 query = { email: req.query?.email }
