@@ -12,7 +12,13 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: ['http://localhost:5174', 'http://localhost:5173'],
+    origin: [
+        'http://localhost:5174',
+        'http://localhost:5173',
+        "https://assignment-11-5c145.web.app",
+        "https://assignment-11-5c145.firebaseapp.com",
+
+    ],
     credentials: true
 }));
 
@@ -168,9 +174,10 @@ async function run() {
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true }
             const { AppliedCount } = req.body;
+
             const Job = {
-                $set: {
-                    AppliedCount: AppliedCount,
+                $inc: {
+                    AppliedCount: 1,
                 }
             }
             const result = await JobsCollections.updateOne(filter, Job, options);
