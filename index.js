@@ -65,6 +65,7 @@ async function run() {
         const JobsCollections = client.db("JobBoardDB").collection("jobsPost");
         const AppliedCollection = client.db("JobBoardDB").collection("AppliedCollection")
 
+
         // auth related api
         app.post("/api/v1/jwt", async (req, res) => {
             const user = req.body;
@@ -81,9 +82,21 @@ async function run() {
                 .send({ success: true })
         })
 
+        app.post("/api/v1/logout", async (req, res) => {
+            const user = req.body;
+            console.log("Logout User:", user);
+            res.clearCookie("token", {
+                maxAge: 0,
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            })
+                .send({ success: true });
+        })
+
 
         // get jobs from api
-        app.get("/api/v1/jobsdata",  async (req, res) => {
+        app.get("/api/v1/jobsdata", async (req, res) => {
             // console.log(req.query.email)
             let query = {};
             if (req.query?.Category) {
@@ -94,9 +107,9 @@ async function run() {
             res.send(result);
         })
         // get api for specific profile posted job 
-        app.get("/api/v1/jobsdata/myJobs", verifyToken ,async(req, res)=>{
+        app.get("/api/v1/jobsdata/myJobs", verifyToken, async (req, res) => {
             console.log(req.query.email)
-            
+
             if (req.query.email !== req.user.email) {
                 return res.status(403).send({ message: "Forbidden Access" })
             }
@@ -104,7 +117,7 @@ async function run() {
             if (req.query?.email) {
                 query = { postedEmail: req.query?.email }
             }
-            
+
             const cursor = JobsCollections.find(query);
             const result = await cursor.toArray();
             res.send(result);
@@ -137,12 +150,27 @@ async function run() {
                     ApplicationStartDate: updatedJob.ApplicationStartDate,
                     ApplicationEndDate: updatedJob.ApplicationEndDate,
                     Salary: updatedJob.Salary,
-                    JobApplicantsNumber: updatedJob.JobApplicantsNumber,
+                    AppliedCount: updatedJob.AppliedCount,
                     JobBanner: updatedJob.JobBanner,
                     LoggedInUser: updatedJob.LoggedInUser,
                     CompanyLogo: updatedJob.CompanyLogo,
                     CompanySlogan: updatedJob.CompanySlogan,
                     DetailDescription: updatedJob.DetailDescription,
+                }
+            }
+            const result = await JobsCollections.updateOne(filter, Job, options);
+            res.send(result);
+
+
+        })
+        app.patch("/api/v1/jobsdata/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true }
+            const { AppliedCount } = req.body;
+            const Job = {
+                $set: {
+                    AppliedCount: AppliedCount,
                 }
             }
             const result = await JobsCollections.updateOne(filter, Job, options);
