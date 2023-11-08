@@ -1,19 +1,21 @@
 const express = require('express')
 const cors = require('cors');
 require('dotenv').config()
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
-// const jwt = require('jsonwebtoken');
-// const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser')
 const port = process.env.PORT || 5000;
 
 
 // middleware
 app.use(express.json());
+app.use(cookieParser());
 app.use(cors({
     origin: ['http://localhost:5174', 'http://localhost:5173'],
     credentials: true
 }));
+
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.4hda1bm.mongodb.net/?retryWrites=true&w=majority`;
@@ -27,6 +29,34 @@ const client = new MongoClient(uri, {
     }
 });
 
+// middleware custom
+const logger = async (req, res, next) => {
+    console.log("called", req.hostname, req.originalUrl);
+    next();
+}
+const verifyToken = async (req, res, next) => {
+    const token = req.cookies?.Token;
+    // console.log("Value of token in middleware:", token)
+    if (!token) {
+        return res.status(401).send({ message: "Unauthorized" })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        // error
+        if (err) {
+            console.log(err)
+            return res.status(401).send({ message: " Unauthorized" })
+        }
+
+        // if token is valid than it would be decoded
+
+        console.log("value in the token", decoded);
+        req.user = decoded;
+        next();
+    })
+}
+
+
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
@@ -34,6 +64,24 @@ async function run() {
 
         const JobsCollections = client.db("JobBoardDB").collection("jobsPost");
         const AppliedCollection = client.db("JobBoardDB").collection("AppliedCollection")
+
+        // auth related api
+        app.post("/api/v1/jwt", async (req, res) => {
+            const user = req.body;
+            console.log("user for token on auth Api", user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: "1h",
+            });
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+
+            })
+                .send({ success: true })
+        })
+
+
         // get jobs from api
         app.get("/api/v1/jobsdata", async (req, res) => {
             console.log(req.query.email)
@@ -111,10 +159,13 @@ async function run() {
         })
 
         app.get("/api/v1/applied", async (req, res) => {
-            // console.log(req.query.email);
+            console.log("applied called email:", req.query.email);
+            console.log("Valid user Information :", req.user);
+            // console.log("token from applied api:", req.cookies.token);
+
             let query = {};
             if (req.query?.email) {
-                query = { email: req.query.email }
+                query = { email: req.query?.email }
             }
             const cursor = AppliedCollection.find(query);
             const result = await cursor.toArray();
