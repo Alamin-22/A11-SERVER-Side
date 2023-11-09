@@ -102,6 +102,14 @@ async function run() {
 
 
         // get jobs from api
+
+
+        app.get("/api/v1/jobsdataCount", async (req, res) => {
+
+            const count = await JobsCollections.estimatedDocumentCount();
+            res.send({ count });
+
+        })
         app.get("/api/v1/jobsdata", async (req, res) => {
             // console.log(req.query.email)
             let query = {};
@@ -109,7 +117,12 @@ async function run() {
                 query = { Category: req.query?.Category }
             }
             const cursor = JobsCollections.find(query);
-            const result = await cursor.toArray();
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+            const result = await cursor
+                .skip(page * size)
+                .limit(size)
+                .toArray();
             res.send(result);
         })
         // get api for specific profile posted job 
